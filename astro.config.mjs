@@ -8,7 +8,7 @@ import compress from "@playform/compress";
 
 // https://astro.build/config
 export default defineConfig({
-	site: "https://tasha.kids",
+	site: "https://corinne.kids",
 	adapter: netlify({
 		imageCDN: false,
 	}),
