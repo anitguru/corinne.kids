@@ -1,7 +1,11 @@
 ---
-import { getImage } from "astro:assets";
 import { SEO } from "astro-seo";
+import { getImage } from "astro:assets";
 
+// 1) Import a literal file. We'll call it 'ogImage' here:
+import ogImage from "/src/assets/images/og-image.webp";
+
+// If you have dynamic props, keep them:
 interface BaseProps {
   title: string;
   description: string;
@@ -10,58 +14,63 @@ interface BaseProps {
 
 interface GenProps extends BaseProps {
   type: "general";
-  image: ImageMetadata;
+  // If you don't want to rely on a prop, remove "image" here or make it optional
+  // image?: ImageMetadata;
 }
 
-const { title, description, image, noindex = false } = Astro.props as GenProps;
+const { title, description, noindex = false } = Astro.props as GenProps;
 
+// 2) Generate your canonical URL
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 
-let optimizedImage;
-if (image) {
-  optimizedImage = await getImage({
-    src: image,
-    format: "webp",
-    quality: "high",
-    width: 1200,
-  });
-}
+// 3) Convert the imported image into an optimized version (webp, width=1200)
+const optimizedImage = await getImage({
+  src: ogImage,
+  format: "webp",
+  quality: "high",
+  width: 1200,
+});
 
+// 4) Construct absolute URL for the final image (openGraph requires a full URL)
 function trimEndSlash(str: string) {
-  if (str[str.length - 1] === "/") {
-    return str.slice(0, -1);
-  } else {
-    return str;
-  }
+  return str.endsWith("/") ? str.slice(0, -1) : str;
 }
-
-// put together the image URL
-const imageUrl =
-  trimEndSlash(Astro.site?.toString() || "") + optimizedImage?.src;
+const siteUrl = trimEndSlash(Astro.site?.toString() ?? "");
+const imageUrl = siteUrl + optimizedImage.src;
 ---
 
 <SEO
   title={title}
   description={description}
   canonical={canonicalUrl.toString()}
+  noindex={noindex}
+  nofollow={noindex}
+
   openGraph={{
     basic: {
-      title: title,
+      title,
       type: "website",
-      image: imageUrl,
       url: canonicalUrl.toString(),
+      image: imageUrl, // OG "image" must be a string
     },
     optional: {
-      description: description,
-      // siteName: title,
+      description,
+      siteName: "Corinne's Linktree", // optional
     },
     image: {
       type: "image/webp",
-      width: optimizedImage?.attributes.width || "1200",
-      height: optimizedImage?.attributes.height || "800",
-      alt: "profile image",
+      width: optimizedImage.attributes.width,
+      height: optimizedImage.attributes.height,
+      alt: "Corinne's cool background image",
     },
   }}
-  noindex={noindex}
-  nofollow={noindex}
+
+  twitter={{
+    basic: {
+      card: "summary_large_image",
+      title,
+      description,
+      image: imageUrl, // Twitter image
+    }
+  }}
 />
